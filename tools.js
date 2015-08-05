@@ -1,3 +1,26 @@
+// Add some functions to the Object.prototype.
+Object.defineProperties(Object.prototype, {
+  new : {
+    value : New,
+    writable : false,
+    enumerable : false
+  },
+  copy : {
+    value : copy,
+    writable : false,
+    enumerable : false
+  },
+  extend : {
+    value : extend,
+    writable : false,
+    enumerable : false
+  },
+  extends : {
+    value : extend,
+    writable : false,
+    enumerable : false
+  }
+})
 
 exports.startTimer = startTimer
 function startTimer() {
@@ -15,8 +38,6 @@ function startTimer() {
 // - make a deep copy of the `parent` `ownProperties` into `this`
 // with no parameters:
 // - make a new object that inherits from this by prototype inheritance
-Object.prototype.extends = extend
-Object.prototype.extend = extend
 function extend(parent) {
   // Apply the inheritance by constructor call
   // using parent as super class.
@@ -49,7 +70,6 @@ function extend(parent) {
 //   root_func = function(){this.a=0; this.b=2;}
 //   obj1 = root_obj.new(); // this one literal properties are inherited from root_obj via obj1.prototype
 //   obj2 = root_func.new();
-Object.prototype.new = New
 exports.new = New
 function New(obj) {
   function F() {}
@@ -64,7 +84,6 @@ function New(obj) {
   return copy(obj)
 }
 
-Object.prototype.copy = copy
 exports.copy = copy
 function copy(obj) {
   function F() {}
@@ -77,13 +96,10 @@ function copy(obj) {
     return obj;
 
   if(typeof obj === 'object') {
-    // Copy the prototype with a shallow copy:
-    for(var i in obj) {
-      if(!obj.hasOwnProperty(i))
-        F.prototype[i] = obj[i]
-    }
+    // Copy the prototype:
+    F.prototype = Object.getPrototypeOf(obj)
 
-    // Instantiate the object with the copied prototype:
+    // Instantiate a new object with the same prototype:
     newObj = new F()
   } else {
     // If the object is a function the function evaluate it:
