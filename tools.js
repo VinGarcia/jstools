@@ -1,8 +1,109 @@
 
-exports.extend = function(obj) {
+exports.startTimer = startTimer
+function startTimer() {
+  var start = new Date().getTime()
+
+  return function() {
+    return (new Date().getTime() - start) / 1000
+  }
+}
+
+// This function apply three distinct behaviors:
+// With one function as parameter:
+// - make `this` inherit from `parent` by function call
+// With one object as parameter:
+// - make a deep copy of the `parent` `ownProperties` into `this`
+// with no parameters:
+// - make a new object that inherits from this by prototype inheritance
+Object.prototype.extends = extend
+Object.prototype.extend = extend
+function extend(parent) {
+  // Apply the inheritance by constructor call
+  // using parent as super class.
+  if(typeof parent === 'function') {
+    parent.apply(this)
+    return this
+  }
+
+  // Make a deep copy of the `parent` own properties:
+  if(typeof parent === 'object') {
+    for(var i in parent)
+      if(parent.hasOwnProperty(i))
+        this[i] = copy(parent[i])
+    return this;
+  }
+
+  // Apply the inheritance by prototype
+  // using this as super class:
+  if(arguments.length === 0) {
+    function F(){}
+    F.prototype = this;
+    var obj = new F();
+    return obj;
+  }
+}
+
+// Used to instantiate javascript functions and copy objects
+// usage:
+//   root_obj = {'a':0, 'b':2};
+//   root_func = function(){this.a=0; this.b=2;}
+//   obj1 = root_obj.new(); // this one literal properties are inherited from root_obj via obj1.prototype
+//   obj2 = root_func.new();
+Object.prototype.new = New
+exports.new = New
+function New(obj) {
   function F() {}
-  F.prototype = obj;
-  return new F();
+
+  if(arguments.length===0)
+    obj = this
+
+  if(typeof obj === 'function')
+    return new obj()
+
+  // If obj is an object:
+  return copy(obj)
+}
+
+Object.prototype.copy = copy
+exports.copy = copy
+function copy(obj) {
+  function F() {}
+  var newObj;
+
+  if(arguments.length===0)
+    obj = this;
+
+  if(typeof obj !== 'object' && typeof obj !== 'function')
+    return obj;
+
+  if(typeof obj === 'object') {
+    // Copy the prototype with a shallow copy:
+    for(var i in obj) {
+      if(!obj.hasOwnProperty(i))
+        F.prototype[i] = obj[i]
+    }
+
+    // Instantiate the object with the copied prototype:
+    newObj = new F()
+  } else {
+    // If the object is a function the function evaluate it:
+    var aux
+    newObj = eval('aux='+obj.toString())
+    // And copy the prototype:
+    newObj.prototype = obj.prototype
+  }
+
+  // Copy the object with a deep copy:
+  for(var i in obj) {
+    if(obj.hasOwnProperty(i)) {
+      if(typeof obj[i] !== 'object')
+        newObj[i] = obj[i]
+      else
+        newObj[i] = copy(obj[i])
+    }
+  }
+
+  return newObj;
 }
 
 exports.print = console.log
@@ -75,39 +176,9 @@ exports.loadJSON = function(filePath) {
   return JSON.parse(file)
 }
 
-
-exports.remap_old = function(table, options) {
-  var atvList = [];
-
-  if(options === undefined) options = {};
-  var getKey = options.getKey || (function(item) { return item.id; });
-  var getValue = options.getValue || (function(item) { return item; });
-  dropDuplicates = options.dropDuplicates || false;
-  // console.log(options);
-  // console.log(options.dropDuplicates);
-  // console.log(dropDuplicates);
-
-  for(var i in table) {
-    var key = getKey(table[i]);
-
-    // If that is the first item with such key:
-    if(atvList[key] === undefined) {
-      //console.log("Normal: " + key);
-      if(!dropDuplicates)
-      	// Insert a list of items:
-        atvList[key] = [ getValue(table[i], atvList[key]) ];
-      else
-      	// Insert a single item:
-        atvList[key] = getValue(table[i], atvList[key]);
-    }
-    else if(!dropDuplicates) {
-      // console.log("Duplicada: " + key);
-      atvList[key].push( getValue(table[i]) );
-    }
-  }
-  return atvList;
-}
-
+// Just a class sample to use on tests:
+exports.sample = function(){this.a=0;this.b=1;this.c=2}
+exports.sample2 = function(){this.d=3;this.e=4;this.f=5}
 
 
 
