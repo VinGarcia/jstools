@@ -97,11 +97,17 @@ function merge(parent) {
 }
 
 function extend() {
-  // Apply the inheritance by prototype
-  // using this as super class:
-  function F(){}
-  F.prototype = this;
-  return new F();
+  if(typeof this === 'object') {
+    // Apply the inheritance by prototype
+    // using this as super class:
+    function F(){}
+    F.prototype = this;
+    return new F();
+  }
+
+  if(typeof this === 'function') {
+    return Class.extend.apply(this, arguments)
+  }
 }
 
 // Used to instantiate javascript functions and copy objects
