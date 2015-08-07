@@ -1,3 +1,6 @@
+// Include the Class global object.
+require('./Class.js')
+
 // Add some functions to the Object.prototype.
 Object.defineProperties(Object.prototype, {
   new : {
@@ -10,6 +13,11 @@ Object.defineProperties(Object.prototype, {
     writable : false,
     enumerable : false
   },
+  instanceof : {
+    value : instanceOf,
+    writable : false,
+    enumerable : false
+  },
   extend : {
     value : extend,
     writable : false,
@@ -18,6 +26,21 @@ Object.defineProperties(Object.prototype, {
   extends : {
     value : extend,
     writable : false,
+    enumerable : false
+  },
+  merge : {
+    value : merge,
+    writable : false,
+    enumerable : false
+  },
+  sample1 : {
+    value : sample1,
+    writable : true,
+    enumerable : false
+  },
+  sample2 : {
+    value : sample2,
+    writable : true,
     enumerable : false
   }
 })
@@ -31,37 +54,54 @@ function startTimer() {
   }
 }
 
-// This function apply three distinct behaviors:
-// With one function as parameter:
-// - make `this` inherit from `parent` by function call
-// With one object as parameter:
-// - make a deep copy of the `parent` `ownProperties` into `this`
-// with no parameters:
-// - make a new object that inherits from this by prototype inheritance
-function extend(parent) {
-  // Apply the inheritance by constructor call
-  // using parent as super class.
-  if(typeof parent === 'function') {
-    parent.apply(this)
-    return this
+// Merge the prototype chain of this and parent.
+// Also merge the own properties of both.
+function merge(parent) {
+  if(typeof parent !== 'object' && typeof parent !== 'function') return
+
+  var proto = {}
+
+  var po = typeof parent === 'object'
+  var to = typeof this === 'object'
+
+  // Copy the parent prototype:
+  if(po) proto = copy(Object.getPrototypeOf(parent))
+  else proto = copy(parent.prototype)
+
+  // Copy each other prototype on the prototype chain:
+  var current = proto
+  while(true) {
+    var aux = copy(Object.getPrototypeOf(current))
+    if(aux == null) break
+    Object.setPrototypeOf(current, aux)
+    current = Object.getPrototypeOf(current)
   }
 
-  // Make a deep copy of the `parent` own properties:
-  if(typeof parent === 'object') {
-    for(var i in parent)
-      if(parent.hasOwnProperty(i))
-        this[i] = copy(parent[i])
-    return this;
-  }
+  var this_proto = to ? Object.getPrototypeOf(this) : this.prototype
 
+  // Link proto tail with this_proto:
+  Object.setPrototypeOf(current, this_proto)
+
+  // Set proto as prototype of this:
+  if(to)
+    Object.setPrototypeOf(this, proto)
+  else
+    this.prototype = proto
+
+  // Copy own properties:
+  for(var i in parent)
+    if(parent.hasOwnProperty(i))
+      this[i] = parent[i]
+
+  return this
+}
+
+function extend() {
   // Apply the inheritance by prototype
   // using this as super class:
-  if(arguments.length === 0) {
-    function F(){}
-    F.prototype = this;
-    var obj = new F();
-    return obj;
-  }
+  function F(){}
+  F.prototype = this;
+  return new F();
 }
 
 // Used to instantiate javascript functions and copy objects
@@ -92,15 +132,14 @@ function copy(obj) {
   if(arguments.length===0)
     obj = this;
 
-  if(typeof obj !== 'object' && typeof obj !== 'function')
+  if(typeof obj !== 'object' && typeof obj !== 'function' || obj == null)
     return obj;
 
   if(typeof obj === 'object') {
     // Copy the prototype:
-    F.prototype = Object.getPrototypeOf(obj)
-
-    // Instantiate a new object with the same prototype:
-    newObj = new F()
+    newObj = {}
+    var proto = Object.getPrototypeOf(obj)
+    Object.setPrototypeOf(newObj, proto)
   } else {
     // If the object is a function the function evaluate it:
     var aux
@@ -119,7 +158,37 @@ function copy(obj) {
     }
   }
 
+  // Add a reference to the original object:
+  Object.defineProperties(newObj, {
+    __original__ : {
+      value : obj,
+      writable : true,
+      enumerable : false
+    }
+  })
+
   return newObj;
+}
+
+function instanceOf(obj) {
+  if(typeof obj !== 'function') return false
+
+  var proto;
+  if(typeof this === 'object')
+    proto = Object.getPrototypeOf(this)
+  else if(typeof this === 'function')
+    proto = this.prototype
+
+  while(true) {
+    if(proto === obj.prototype)
+      return true
+    if(proto.__original__ !== undefined && proto.__original__ === obj.prototype)
+      return true
+    proto = Object.getPrototypeOf(proto)
+    if(proto == null) break
+  }
+
+  return false
 }
 
 exports.print = console.log
@@ -193,8 +262,10 @@ exports.loadJSON = function(filePath) {
 }
 
 // Just a class sample to use on tests:
-exports.sample = function(){this.a=0;this.b=1;this.c=2}
-exports.sample2 = function(){this.d=3;this.e=4;this.f=5}
+exports.sample1 = sample1
+function sample1(){this.a=0;this.b=1;this.c=2}
+exports.sample2 = sample2
+function sample2(){this.d=3;this.e=4;this.f=5}
 
 
 
