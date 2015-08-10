@@ -47,7 +47,9 @@
               return ret;
             };
           })(name, prop[name]) : prop[name]
-      }
+      } else if(name[0] == '$')
+        // '$' denotes $hared or $tatic variables:
+        prototype[name.substr(1)] = prop[name]
     }
    
     // The dummy class constructor
@@ -59,7 +61,8 @@
 
         // Copy the properties over onto the new prototype:
         for (var name in prop) {
-          if( typeof prop[name] != 'function')
+          // Don't add functions and $hared variables:
+          if( typeof prop[name] != 'function' && name[0] !== '$')
             // If name is not defined:
             if(!this[name])
               this[name] = typeof prop[name] == 'object' ?
