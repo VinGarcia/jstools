@@ -5,6 +5,9 @@
 // Inspired by base2 and Prototype
 (function(){
   var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\bsuper\b/ : /.*/;
+
+  // Require deep copy method:
+  require('./copy.js')
  
   // The base Class implementation (does nothing)
   this.Class = function(){ this.apply = apply };
