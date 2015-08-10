@@ -57,30 +57,42 @@ function startTimer() {
 // Merge the prototype chain of this and parent.
 // Also merge the own properties of both.
 function merge(parent) {
-  if(typeof parent !== 'object' && typeof parent !== 'function') return
-
-  var proto = {}
+  if(typeof parent !== 'object' && typeof parent !== 'function') return this
 
   var po = typeof parent === 'object'
   var to = typeof this === 'object'
 
   // Copy the parent prototype:
+  var proto
   if(po) proto = copy(Object.getPrototypeOf(parent))
   else proto = copy(parent.prototype)
 
   // Copy each other prototype on the prototype chain:
-  var current = proto
+  var head = proto
+  var aux = Object.getPrototypeOf(head)
   while(true) {
-    var aux = copy(Object.getPrototypeOf(current))
     if(aux == null) break
-    Object.setPrototypeOf(current, aux)
-    current = Object.getPrototypeOf(current)
+
+    // If aux is not on this prototype chain:
+    if(!this.instanceof(aux)) {
+      // Copy aux and add it to the list:
+      Object.setPrototypeOf(head, copy(aux))
+      head = aux
+    }
+
+    aux = Object.getPrototypeOf(aux)
   }
 
+  // If proto is on this prototype chain:
+  if(this.instanceof(proto))
+    // If it is remove proto from the start of the list
+    proto = Object.getPrototypeOf(proto)
+
+  // Read this prototype:
   var this_proto = to ? Object.getPrototypeOf(this) : this.prototype
 
-  // Link proto tail with this_proto:
-  Object.setPrototypeOf(current, this_proto)
+  // Link proto head with this_proto:
+  Object.setPrototypeOf(head, this_proto)
 
   // Set proto as prototype of this:
   if(to)
@@ -90,8 +102,13 @@ function merge(parent) {
 
   // Copy own properties:
   for(var i in parent)
-    if(parent.hasOwnProperty(i))
-      this[i] = parent[i]
+    if(parent.hasOwnProperty(i)) {
+      if(this[i] == undefined)
+        this[i] = parent[i]
+    }
+  
+  if(typeof parent.start === 'function')
+    parent.start.apply(this)
 
   return this
 }
@@ -140,10 +157,13 @@ function copy(obj) {
 
   if(typeof obj !== 'object' && typeof obj !== 'function' || obj == null)
     return obj;
+  
+  if(obj.clone != undefined)
+    return obj.clone()
 
   if(typeof obj === 'object') {
     // Copy the prototype:
-    newObj = {}
+    newObj = obj instanceof Array ? [] : {}
     var proto = Object.getPrototypeOf(obj)
     Object.setPrototypeOf(newObj, proto)
   } else {
@@ -167,7 +187,9 @@ function copy(obj) {
   // Add a reference to the original object:
   Object.defineProperties(newObj, {
     __original__ : {
-      value : obj,
+      value :
+        obj.__original__ != null && typeof obj.__original__== 'object'?
+        obj.__original__ : obj,
       writable : true,
       enumerable : false
     }
@@ -176,22 +198,32 @@ function copy(obj) {
   return newObj;
 }
 
+// Receive an constructor function as obj
+// or an constructor function prototype as obj
 function instanceOf(obj) {
-  if(typeof obj !== 'function') return false
+  if(typeof obj !== 'function' && typeof obj !== 'object') return false
+
+  var this_proto;
+  if(typeof this === 'object')
+    this_proto = Object.getPrototypeOf(this)
+  else if(typeof this === 'function')
+    this_proto = this.prototype
 
   var proto;
-  if(typeof this === 'object')
-    proto = Object.getPrototypeOf(this)
-  else if(typeof this === 'function')
-    proto = this.prototype
+  if(typeof obj === 'object') {
+    if(obj.__original__ != null && typeof obj.__original__ == 'object')
+      proto = obj.__original__
+    else
+      proto = obj
+  }
+  else if(typeof obj === 'function')
+    proto = obj.prototype
 
   while(true) {
-    if(proto === obj.prototype)
+    if(this_proto === proto || this_proto.__original__ === proto)
       return true
-    if(proto.__original__ !== undefined && proto.__original__ === obj.prototype)
-      return true
-    proto = Object.getPrototypeOf(proto)
-    if(proto == null) break
+    this_proto = Object.getPrototypeOf(this_proto)
+    if(this_proto == null) break
   }
 
   return false
