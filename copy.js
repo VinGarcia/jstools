@@ -1,16 +1,3 @@
-Object.defineProperties(Object.prototype, {
-  copy : {
-    value : copy,
-    writable : false,
-    enumerable : false
-  },
-  instanceof : {
-    value : instanceOf,
-    writable : false,
-    enumerable : false
-  }
-})
-
 exports.copy = copy
 function copy(obj) {
   function F() {}
@@ -64,24 +51,34 @@ function copy(obj) {
 
 // Receive an constructor function as obj
 // or an constructor function prototype as obj
-function instanceOf(obj) {
-  if(typeof obj !== 'function' && typeof obj !== 'object') return false
+exports.instanceOf = instanceOf
+function instanceOf(obj, parent) {
+
+  if(arguments.length===0) return false
+  if(arguments.length===1) {
+    parent = obj
+    obj = this
+  }
+
+  if(typeof parent !== 'function' && typeof parent !== 'object')
+    return false
 
   var this_proto;
-  if(typeof this === 'object')
-    this_proto = Object.getPrototypeOf(this)
-  else if(typeof this === 'function')
-    this_proto = this.prototype
+  if(typeof obj === 'object')
+    this_proto = Object.getPrototypeOf(obj)
+  else if(typeof obj === 'function')
+    this_proto = obj.prototype
 
   var proto;
-  if(typeof obj === 'object') {
-    if(obj.__original__ != null && typeof obj.__original__ == 'object')
-      proto = obj.__original__
+  if(typeof parent === 'object') {
+    if(parent.__original__ != null &&
+        typeof parent.__original__ == 'object')
+      proto = parent.__original__
     else
-      proto = obj
+      proto = parent
   }
-  else if(typeof obj === 'function')
-    proto = obj.prototype
+  else if(typeof parent === 'function')
+    proto = parent.prototype
 
   while(true) {
     if(this_proto === proto || this_proto.__original__ === proto)

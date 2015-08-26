@@ -7,7 +7,7 @@
   var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\bsuper\b/ : /.*/;
 
   // Require deep copy method:
-  require('./copy.js')
+  var copy = require('./copy.js').copy
  
   // The base Class implementation (does nothing)
   this.Class = function(){ this.apply = apply };
@@ -69,13 +69,13 @@
             // If name is not defined:
             if(!this[name])
               this[name] = typeof prop[name] == 'object' ?
-                prop[name].copy() : prop[name]
+                copy(prop[name]) : prop[name]
         }
 
         // Try to insert the prototype into this object
         // if its being called with apply()
         if(!this.instanceof(arguments.callee)) {
-          var proto = arguments.callee.prototype.copy()
+          var proto = copy(arguments.callee.prototype)
           var this_proto = Object.getPrototypeOf(this)
           Object.setPrototypeOf(proto, this_proto)
           Object.setPrototypeOf(this, proto)

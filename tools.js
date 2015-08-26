@@ -1,6 +1,5 @@
 // Include the Class global object.
 require('./Class.js')
-copy = require('./copy.js').copy
 
 // Add some functions to the Object.prototype.
 Object.defineProperties(Object.prototype, {
@@ -21,6 +20,16 @@ Object.defineProperties(Object.prototype, {
   },
   merge : {
     value : merge,
+    writable : false,
+    enumerable : false
+  },
+  copy : {
+    value : require('./copy.js').copy,
+    writable : false,
+    enumerable : false
+  },
+  instanceof : {
+    value : require('./copy.js').instanceOf,
     writable : false,
     enumerable : false
   },
@@ -49,6 +58,8 @@ function startTimer() {
 // Also merge the own properties of both.
 function merge(parent) {
   if(typeof parent !== 'object' && typeof parent !== 'function') return this
+
+  var copy = require('./copy.js').copy
 
   var po = typeof parent === 'object'
   var to = typeof this === 'object'
@@ -135,7 +146,7 @@ function New(obj) {
     return new obj()
 
   // If obj is an object:
-  return copy(obj)
+  return require('./copy.js').copy(obj)
 }
 
 exports.print = console.log
