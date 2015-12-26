@@ -33,6 +33,11 @@ Object.defineProperties(Object.prototype, {
     writable : false,
     enumerable : false
   },
+  hide : {
+    value : hide,
+    writable : false,
+    enumerable : false
+  },
   sample1 : {
     value : sample1,
     writable : true,
@@ -44,6 +49,15 @@ Object.defineProperties(Object.prototype, {
     enumerable : false
   }
 })
+
+exports.include = include
+$include = include
+function include(file) {
+  var data = require('fs').readFileSync(file, 'utf-8')
+  var script = require('vm').Script
+  script = new script(data, file)
+  script.runInThisContext()
+}
 
 exports.startTimer = startTimer
 function startTimer() {
@@ -147,6 +161,16 @@ function New(obj) {
 
   // If obj is an object:
   return require('./copy.js').copy(obj)
+}
+
+// Used to hide special attributes:
+function hide(obj, name, options) {
+  options = options || {}
+  
+  options.value = options.value || obj[name]
+  options.enumerable = false
+
+  Object.defineProperty(obj, name, options)
 }
 
 exports.print = console.log
