@@ -54,22 +54,13 @@
         // Check if we're overwriting an existing function
         prototype[name] = typeof _super[name] == "function" &&
           fnTest.test(prop[name]) ?
-          (function(name, fn){
-            return function() {
-              var tmp = this.super;
-             
-              // Add a new .super() method that is the same method
-              // but on the super-class
-              this.super = _super[name]
-             
-              // The method only need to be bound temporarily, so we
-              // remove it when we're done executing
-              var ret = fn.apply(this, arguments);
-              this.super = tmp;
-             
-              return ret;
-            };
-          })(name, prop[name]) : prop[name]
+
+          // Wrap this.super around the function call
+          wrapSuper(_super[name], prop[name]) :
+
+          // If not a function, or if it does not call super:
+          prop[name]
+
       } else if(name[0] == '$')
         // '$' denotes $hared or $tatic variables:
         prototype[name.substr(1)] = prop[name]
@@ -108,7 +99,7 @@
       // Copy the non-static properties from the prototype:
       for (var name in prop) {
         // Don't add functions and $hared variables:
-        if( typeof prop[name] != 'function' && name[0] !== '$')
+        if( typeof prop[name] != 'function' && name[0] != '$')
           // If name is not defined:
           if(!this[name])
             this[name] = copy(prop[name])
@@ -123,9 +114,26 @@
         Object.setPrototypeOf(this, proto)
       }
 
+      // * * * * * Save current functions * * * * *//
+
+      var _super = {}
+      for (var name in this) {
+        if( typeof this[name] == 'function' )
+          _super[name] = this[name]
+        }
+
       // The rest of the construction is done in the init method:
       if( prop.init )
         prop.init.apply(this, arguments);
+
+      // * * * * * Wrap priviledged functions with `super` * * * * *
+
+      // For each of the saved functions:
+      for(var name in _super) {
+        // If a priviledged function overwritten the old function:
+        if( _super[name] != this[name] && fnTest.test(this[name]) )
+          this[name] = wrapSuper( _super[name], this[name] )
+      }
     }
    
     // Populate our constructed prototype object
@@ -139,6 +147,20 @@
 
     return Class;
   };
+
+  function wrapSuper(_super, func) {
+    return function() {
+
+      var bkp = _super
+      this.super = _super
+      
+      var ret = func.apply(this, arguments)
+
+      this.super = bkp
+
+      return ret;
+    }
+  }
 })();
 
 
