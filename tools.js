@@ -164,10 +164,10 @@ function New(obj) {
 }
 
 // Used to hide special attributes:
-function hide(obj, name, options) {
-  options = options || {}
+function hide(obj, name, value) {
+  var options = {}
   
-  options.value = options.value || obj[name]
+  options.value = value || obj[name]
   options.enumerable = false
 
   Object.defineProperty(obj, name, options)

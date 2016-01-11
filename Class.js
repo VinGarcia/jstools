@@ -1,5 +1,6 @@
 /* Simple JavaScript Inheritance
  * By John Resig http://ejohn.org/
+ * Edited by Vinícius Garcia: https://github.com/vingarcia/
  * MIT Licensed.
  */
 // Inspired by base2 and Prototype
@@ -13,17 +14,15 @@
  
   // The base Class implementation (does nothing)
   this.Class = function(){
-    this.apply = apply
-    hide(this, 'apply')
-    this.instanceof = instanceOf
-    hide(this, 'instanceof')
+    hide(this, 'apply', apply)
+    hide(this, 'instanceof', instanceOf)
   }
 
   // Used to hide special attributes:
-  function hide(obj, name, options) {
-    options = options || {}
+  function hide(obj, name, value) {
+    var options = {}
     
-    options.value = options.value || obj[name]
+    options.value = value || obj[name]
     options.enumerable = false
 
     Object.defineProperty(obj, name, options)
@@ -67,19 +66,17 @@
     }
    
     // Add an unique id to this class constructor:
-    Class.__id__ = id_count++
-    hide(Class, '__id__')
+    hide(Class, '__id__', id_count++)
 
     // The class constructor
     function Class() {
       // Only construct if not initializing:
       if ( initializing ) return
 
-      // Add hidden variables to `this`:
-      if(!this.__init_map__) {
-        this.__init_map__ = {}
-        hide(this, '__init_map__')
-      }
+      // Add the init_map to keep record
+      // of already initialized constructors:
+      if(!this.__init_map__)
+        hide(this, '__init_map__', {})
 
       // * * * * * Start parents construction: * * * * *
 
@@ -106,7 +103,8 @@
       }
 
       // In case of multiple inheritance,
-      // copy my prototype to `this` prototype chain:
+      // copy this function's prototype
+      // to `this` prototype chain:
       if(!this.instanceof(arguments.callee)) {
         var proto = copy(arguments.callee.prototype)
         var this_proto = Object.getPrototypeOf(this)
@@ -114,7 +112,7 @@
         Object.setPrototypeOf(this, proto)
       }
 
-      // * * * * * Save current functions * * * * *//
+      // * * * * * Memorize current functions * * * * *//
 
       var _super = {}
       for (var name in this) {
@@ -122,7 +120,7 @@
           _super[name] = this[name]
         }
 
-      // The rest of the construction is done in the init method:
+      // Call init:
       if( prop.init )
         prop.init.apply(this, arguments);
 
