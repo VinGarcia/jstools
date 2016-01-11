@@ -167,8 +167,10 @@ function New(obj) {
 function hide(obj, name, value) {
   var options = {}
   
-  options.value = value || obj[name]
+  options.value = value !== undefined ? value : obj[name]
+  
   options.enumerable = false
+  options.writable = true
 
   Object.defineProperty(obj, name, options)
 }

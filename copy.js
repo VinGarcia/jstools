@@ -1,10 +1,13 @@
 exports.copy = copy
-function copy(obj) {
+function copy(obj, manCopy) {
   function F() {}
   var newObj;
 
   if(arguments.length===0)
     obj = this;
+
+  if(manCopy && typeof manCopy != 'function')
+    throw "The manual copy argument must be undefined or a function!"
 
   if(typeof obj !== 'object' && typeof obj !== 'function' || obj == null)
     return obj;
@@ -26,12 +29,12 @@ function copy(obj) {
   }
 
   // Copy the object with a deep copy:
-  for(var i in obj) {
-    if(obj.hasOwnProperty(i)) {
-      if(typeof obj[i] !== 'object')
-        newObj[i] = obj[i]
+  for(var name in obj) {
+    if(obj.hasOwnProperty(name)) {
+      if(typeof obj[name] !== 'object')
+        newObj[name] = manCopy ? manCopy(name, obj[name]) : obj[name];
       else
-        newObj[i] = copy(obj[i])
+        newObj[name] = manCopy ? manCopy(name, obj[name]) : copy(obj[name]);
     }
   }
 

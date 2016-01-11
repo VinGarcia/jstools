@@ -17,13 +17,16 @@
     hide(this, 'apply', apply)
     hide(this, 'instanceof', instanceOf)
   }
+  this.Class.prototype.init = function(){}
 
   // Used to hide special attributes:
   function hide(obj, name, value) {
     var options = {}
     
-    options.value = value || obj[name]
+    options.value = value !== undefined ? value : obj[name]
+
     options.enumerable = false
+    options.writable = true
 
     Object.defineProperty(obj, name, options)
   }
@@ -47,8 +50,15 @@
     var prototype = new this();
     initializing = false;
 
-    // Copy the functions to the prototype:
+    /* * * * * Wrap the prop functions: * * * * */
+
+    // Wrap the the init function:
+    prototype.init = wrapInit(Class, _super, prop, id_count++)
+
+    // Wrap and copy the functions and shared variables to the prototype:
     for (var name in prop) {
+      if(name == 'init') continue;
+
       if( typeof prop[name] == 'function' ) {
         // Check if we're overwriting an existing function
         prototype[name] = typeof _super[name] == "function" &&
@@ -57,81 +67,31 @@
           // Wrap this.super around the function call
           wrapSuper(_super[name], prop[name]) :
 
-          // If not a function, or if it does not call super:
+          // If _super[name] not a function, or if it does not call super:
           prop[name]
 
       } else if(name[0] == '$')
         // '$' denotes $hared or $tatic variables:
         prototype[name.substr(1)] = prop[name]
     }
-   
-    // Add an unique id to this class constructor:
-    hide(Class, '__id__', id_count++)
 
     // The class constructor
     function Class() {
-      // Only construct if not initializing:
-      if ( initializing ) return
 
-      // Add the init_map to keep record
-      // of already initialized constructors:
-      if(!this.__init_map__)
+      if(initializing) return
+
+      // On the first run prepare the hidden
+      // variables of this class instance:
+      if(!this.__init_map__) {
         hide(this, '__init_map__', {})
 
-      // * * * * * Start parents construction: * * * * *
-
-      // Call the parent constructors:
-      constructor.apply(this)
-
-      var id = arguments.callee.__id__
-
-      // If this constructor is already initialized
-      if( this.__init_map__[id] ) return
-
-      // else add it to the initialization map:
-      else this.__init_map__[id] = true
-
-      // * * * * * Start construction: * * * * *
-
-      // Copy the non-static properties from the prototype:
-      for (var name in prop) {
-        // Don't add functions and $hared variables:
-        if( typeof prop[name] != 'function' && name[0] != '$')
-          // If name is not defined:
-          if(!this[name])
-            this[name] = copy(prop[name])
+        // Hide this super in this class instance, so the user won't see it.
+        hide(this, 'super')
       }
 
-      // In case of multiple inheritance,
-      // copy this function's prototype
-      // to `this` prototype chain:
-      if(!this.instanceof(arguments.callee)) {
-        var proto = copy(arguments.callee.prototype)
-        var this_proto = Object.getPrototypeOf(this)
-        Object.setPrototypeOf(proto, this_proto)
-        Object.setPrototypeOf(this, proto)
-      }
-
-      // * * * * * Memorize current functions * * * * *//
-
-      var _super = {}
-      for (var name in this) {
-        if( typeof this[name] == 'function' )
-          _super[name] = this[name]
-        }
-
-      // Call init:
-      if( prop.init )
-        prop.init.apply(this, arguments);
-
-      // * * * * * Wrap priviledged functions with `super` * * * * *
-
-      // For each of the saved functions:
-      for(var name in _super) {
-        // If a priviledged function overwritten the old function:
-        if( _super[name] != this[name] && fnTest.test(this[name]) )
-          this[name] = wrapSuper( _super[name], this[name] )
-      }
+      // The rest of the construction is done in the init method:
+      if( this.init )
+        prototype.init.apply(this, arguments);
     }
    
     // Populate our constructed prototype object
@@ -157,6 +117,101 @@
       this.super = bkp
 
       return ret;
+    }
+  }
+
+  function wrapInit(Class, _super, prop, id) {
+    return function() {
+
+      // If already initialized:
+      if( this.__init_map__[id] ) return
+      this.__init_map__[id] = true
+
+      // Copy the non-static properties from the prototype:
+      for (var name in prop) {
+        // Don't add functions and $hared variables:
+        if( typeof prop[name] != 'function' && name[0] != '$')
+          // If name is not defined:
+          if(!this[name])
+            this[name] = copy(prop[name])
+      }
+
+      // Call default super if not called by the user,
+      // or if the user did not define an init function.
+      if(!fnTest.test(prop.init) || !prop.init)
+        Super.apply(this)
+
+      // If the user defined no init, the job is done.
+      if(!prop.init) return
+
+      /* * * * * Prepare to run init * * * * */
+
+      /* * * * * Memorize current functions * * * * */
+      var _superFuncs = {}
+      for (var name in this) {
+        if( typeof this[name] == 'function' )
+          _superFuncs[name] = this[name]
+      }
+
+      /* * * * * Wrap it with this.super * * * * */
+      var bkp = this.super
+      this.super = Super
+
+      prop.init.apply(this, arguments);
+
+      this.super = bkp
+
+      /* * * * * Wrap any priviledged functions with `super` * * * * */
+      for(var name in _superFuncs) {
+        // If the priviledged function overwritten an older function:
+        if( _superFuncs[name] != this[name] && fnTest.test(this[name]) )
+          this[name] = wrapSuper( _superFuncs[name], this[name] )
+      }
+
+      function Super() {
+        _super.init.apply(this, arguments)
+
+        /* In case of multiple inheritance we need to merge,
+         * the prototype chain of the two Classes.
+         *
+         * The merging process is put in this function to make sure
+         * it is done in the right order and at the right time.
+         *
+         * To detect if the user is merging two different classes
+         * we check if this is an instance of Class, the only reason
+         * it would not be, is because `this` is another's Class instance.
+         *
+         * The merging is complex, consider two prototype chains:
+         *  - `this` prototype chain refer to the one accessible by: this.__proto__
+         *  - `the` prototype chain refer to the one accessible by: Class.prototype
+         *
+         * The merging is as follows:
+         * 
+         * 1. For each prototype on `the` prototype chain we need to
+         *    add a copy of it to the end of `this` prototype chain.
+         *
+         * 2. The order is important. So the first one added must be
+         *    be the one on the higher hierarchy, followed by the rest.
+         *
+         * 3. To allow it we use recursion, so everytime a super constructor
+         *    finishes its execution we copy its subclass prototype
+         *
+         * Please NOTE: The user should not try accessing Class attributes
+         * from inside init before calling Super, because there is an edge
+         * situation (multiple-inheritance) where they will be accesible
+         * only after the call.
+         *
+         * Also NOTE: instanceof won't work on multiple inherited objects.
+         * instead use: `(new Class()).instanceof(Class)`
+         */
+        if(!this.instanceof(Class)) {
+          // Shallow copy to allow the correct behavior of $shared variables.
+          var proto = copy(Class.prototype, function(name, obj) { return obj })
+          var this_proto = Object.getPrototypeOf(this)
+          Object.setPrototypeOf(proto, this_proto)
+          Object.setPrototypeOf(this, proto)
+        }
+      }
     }
   }
 })();
