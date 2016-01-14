@@ -124,7 +124,13 @@
     return function() {
 
       // If already initialized:
-      if( this.__init_map__[id] ) return
+      if( this.__init_map__[id] ) {
+        // If a reinit function is available:
+        if(arguments.length>0 && typeof prop.reinit == 'function')
+          wrapSuper(_super.reinit, prop.reinit).apply(this, arguments)
+
+        return
+      }
       this.__init_map__[id] = true
 
       // Copy the non-static properties from the prototype:

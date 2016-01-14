@@ -1,7 +1,7 @@
 
 require('./Class.js')
 
-var test = 3
+var test = 4
 
 A = {$c:[0], inc:function(){this.c[0]++}, init:function(param){ this.inc(); console.log(param || 'A'); } }
 B = { init:function() { this.super('B'); } }
@@ -80,6 +80,22 @@ if(test == 3) {
   console.log(d1.c)
   console.log(d2.c)
 
+}
+
+// Testing the reinit function
+if(test == 4) {
+
+  F = {
+    init:function(name) { this.reinit(name); },
+    reinit:function(name){ console.log(name||'F') }
+  }
+  G = {init:function(){ this.super('G') }}
+
+  f = Class.extend(F)
+  g = f.extend(G)
+
+  // Executing reinit:
+  g1 = (new g()).apply(f, 'F!')
 }
 
 console.log('end')
