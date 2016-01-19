@@ -188,6 +188,8 @@ exports.loadJSON = function(filePath) {
   return JSON.parse(file)
 }
 
+exports.Except = require('./except.js').Except
+
 // Just a class sample to use on tests:
 exports.sample1 = sample1
 function sample1(){this.a=0;this.b=1;this.c=2}
