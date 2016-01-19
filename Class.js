@@ -9,6 +9,7 @@
 
   // Require deep copy method:
   var copy = require('./copy.js').copy
+  var hide = require('./hide.js').hide
   var instanceOf = require('./copy.js').instanceOf
   var id_count=0
  
@@ -18,18 +19,6 @@
     hide(this, 'instanceof', instanceOf)
   }
   this.Class.prototype.init = function(){}
-
-  // Used to hide special attributes:
-  function hide(obj, name, value) {
-    var options = {}
-    
-    options.value = value !== undefined ? value : obj[name]
-
-    options.enumerable = false
-    options.writable = true
-
-    Object.defineProperty(obj, name, options)
-  }
 
   function apply(func, args) {
     func.apply(this, [].splice.call(arguments, 1));
