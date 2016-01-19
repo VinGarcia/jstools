@@ -1,57 +1,9 @@
 // Include the Class global object.
 require('./Class.js')
 
-// Add some functions to the Object.prototype.
-Object.defineProperties(Object.prototype, {
-  new : {
-    value : New,
-    writable : false,
-    enumerable : false
-  },
-  extend : {
-    value : extend,
-    writable : false,
-    enumerable : false
-  },
-  extends : {
-    value : extend,
-    writable : false,
-    enumerable : false
-  },
-  merge : {
-    value : merge,
-    writable : false,
-    enumerable : false
-  },
-  copy : {
-    value : require('./copy.js').copy,
-    writable : false,
-    enumerable : false
-  },
-  instanceof : {
-    value : require('./copy.js').instanceOf,
-    writable : false,
-    enumerable : false
-  },
-  hide : {
-    value : hide,
-    writable : false,
-    enumerable : false
-  },
-  sample1 : {
-    value : sample1,
-    writable : true,
-    enumerable : false
-  },
-  sample2 : {
-    value : sample2,
-    writable : true,
-    enumerable : false
-  }
-})
+exports.copy = require('./copy.js').copy
 
 exports.include = include
-$include = include
 function include(file) {
   var data = require('fs').readFileSync(file, 'utf-8')
   var script = require('vm').Script
@@ -164,16 +116,7 @@ function New(obj) {
 }
 
 // Used to hide special attributes:
-function hide(obj, name, value) {
-  var options = {}
-  
-  options.value = value !== undefined ? value : obj[name]
-  
-  options.enumerable = false
-  options.writable = true
-
-  Object.defineProperty(obj, name, options)
-}
+exports.hide = require('./hide.js').hide;
 
 exports.print = console.log
 
