@@ -208,12 +208,23 @@
          * Also NOTE: instanceof won't work on multiple inherited objects.
          * instead use: `(new Class()).instanceof(Class)`
          */
+        var proto = Class.prototype
         if(!this.instanceof(Class)) {
           // Shallow copy to allow the correct behavior of $shared variables.
-          var proto = copy(Class.prototype, function(name, obj) { return obj })
+          var proto = copy(proto, function(name, obj) { return obj })
           var this_proto = Object.getPrototypeOf(this)
           Object.setPrototypeOf(proto, this_proto)
           Object.setPrototypeOf(this, proto)
+        }
+
+        // Allow extension of priviledged functions with normal functions:
+        for(var name in proto) {
+          if(typeof proto[name] == 'function' &&
+             this.hasOwnProperty(name) &&
+             typeof this[name] == 'function')
+            // Use prop[name] instead of proto[name]
+            // because proto[name] is already wrapped.
+            this[name] = wrapSuper(this[name], prop[name])
         }
       }
     }
