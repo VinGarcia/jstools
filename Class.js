@@ -59,20 +59,14 @@
     for (var name in prop) {
       if(name == 'init') continue;
 
-      if( typeof prop[name] == 'function' ) {
-        // Check if we're overwriting an existing function
-        prototype[name] = typeof _super[name] == "function" &&
-          fnTest.test(prop[name]) ?
+      // Copy functions and wrap `this.super` around them:
+      if( typeof prop[name] == 'function' )
+        prototype[name] = wrapSuper(_super[name], prop[name])
 
-          // Wrap this.super around the function call
-          wrapSuper(_super[name], prop[name]) :
-
-          // If _super[name] not a function, or if it does not call super:
-          prop[name]
-
-      } else if(name[0] == '$')
-        // '$' denotes $hared or $tatic variables:
-        prototype[name.substr(1)] = prop[name]
+      // Also copy shared variables
+      // ('$' denotes $hared variables):
+      else if(name[0] == '$')
+        prototype[name] = prop[name]
     }
 
     // The class constructor
@@ -107,14 +101,18 @@
   };
 
   function wrapSuper(_super, func) {
+    // If the function does not call this.super, or there is no super to call:
+    if( typeof _super != 'function' || !fnTest.test(func) ) return func;
+
+    // Else:
     return function() {
 
       var bkp = _super
-      this.super = _super
+      this['super'] = _super
       
       var ret = func.apply(this, arguments)
 
-      this.super = bkp
+      this['super'] = bkp
 
       return ret;
     }
@@ -170,7 +168,7 @@
       /* * * * * Wrap any priviledged functions with `super` * * * * */
       for(var name in _superFuncs) {
         // If the priviledged function overwritten an older function:
-        if( _superFuncs[name] != this[name] && fnTest.test(this[name]) )
+        if( _superFuncs[name] != this[name] && this.hasOwnProperty(name) )
           this[name] = wrapSuper( _superFuncs[name], this[name] )
       }
 
