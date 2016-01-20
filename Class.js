@@ -139,12 +139,8 @@
 
       /* * * * * Prepare to run init * * * * */
 
-      /* * * * * Memorize current functions * * * * */
-      var _superFuncs = {}
-      for (var name in this) {
-        if( typeof this[name] == 'function' )
-          _superFuncs[name] = this[name]
-      }
+      // Used to keep track of super functions
+      var _superFuncs
 
       /* * * * * Wrap it with this.super * * * * */
       var bkp = this.super
@@ -161,8 +157,21 @@
           this[name] = wrapSuper( _superFuncs[name], this[name] )
       }
 
+      /* Since _super.init can be called before or inside this.init
+       * and since part of the code in this wrapper must execute
+       * only after _super.init is called, but before this.init
+       * is executed (so the user can have the benefits of this code),
+       * the Super() function bellow is wrapped as this.super()
+       * to allow that code to run at the right moment even inside this.init */
       function Super() {
         _super.init.apply(this, arguments)
+
+        /* * * * * Memorize current functions * * * * */
+        _superFuncs = {}
+        for (var name in this) {
+          if( typeof this[name] == 'function' )
+            _superFuncs[name] = this[name]
+        }
 
         /* In case of multiple inheritance we need to merge,
          * the prototype chain of the two Classes.
