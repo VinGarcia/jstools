@@ -70,6 +70,7 @@
 
         // Hide this super in this class instance, so the user won't see it.
         hide(this, 'super')
+        hide(this, 'overwrite')
       }
 
       // The rest of the construction is done in the init method:
@@ -147,11 +148,17 @@
       /* * * * * Wrap it with this.super * * * * */
       var bkp = this.super
       this.super = Super
+      var bkp2 = this.overwrite
+      this.overwrite = function(name, func) {
+        this[name] = wrapSuper(this[name], func)
+        return this[name]
+      }
 
       try {
         prop.init.apply(this, arguments);
       } finally {
         this.super = bkp
+        this.overwrite = bkp2
       }
 
       /* * * * * Wrap any priviledged functions with `super` * * * * */

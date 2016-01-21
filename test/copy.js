@@ -1,7 +1,7 @@
 
 require('should')
 
-copy = require('./copy.js').copy
+copy = require('../copy.js').copy
 
 var assert = require('assert');
 describe('#copy', function() {

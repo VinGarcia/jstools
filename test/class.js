@@ -1,6 +1,7 @@
 
-require('./Class.js')
+require('../Class.js')
 should = require('should/as-function')
+require('should')
 
 var test = 1
 var output;
@@ -50,22 +51,22 @@ describe('#Class', function() {
       should(a1).be.ok()
       should(a2).be.ok()
       should(a3).be.ok()
-      should(outA).be.exactly('A')
+      should(outA).equal('A')
 
       should(b1).be.ok()
       should(b2).be.ok()
       should(b3).be.ok()
-      should(outB).be.exactly('B')
+      should(outB).equal('B')
 
       should(c1).be.ok()
       should(c2).be.ok()
       should(c3).be.ok()
-      should(outC).be.exactly('B')
+      should(outC).equal('B')
     }); 
   
     it('should share global var correctly', function() {
-      should(b1.$c[0]).be.exactly(6)
-      should(c1.$c[0]).be.exactly(-3)
+      should(b1.$c[0]).equal(6)
+      should(c1.$c[0]).equal(-3)
     });
   });
 
@@ -86,28 +87,28 @@ describe('#Class', function() {
       should(d1).be.ok()
       should(d2).be.ok()
       should(d3).be.ok()
-      should(outD).be.exactly('D')
+      should(outD).equal('D')
     
       should(e1).be.ok()
       should(e2).be.ok()
       should(e3).be.ok()
-      should(outE).be.exactly('E')
+      should(outE).equal('E')
     
       d1.hello()
-      should(output).be.exactly('hello')
+      should(output).equal('hello')
       d1.world()
-      should(output).be.exactly('hello world')
+      should(output).equal('hello world')
       e1.helloWorld('hello world')
-      should(output).be.exactly('hello world')
+      should(output).equal('hello world')
     });
 
     it('should allow apply()', function() {
     
       e1.apply(b)
-      should(e1).have.property('hello').which.is.type('function')
-      should(e1).have.property('world').which.is.type('function')
-      should(e1).have.property('helloWorld').which.is.type('function')
-      should(e1).have.property('inc').which.is.type('function')
+      should(e1).have.property('hello').which.is.Function()
+      should(e1).have.property('world').which.is.Function()
+      should(e1).have.property('helloWorld').which.is.Function()
+      should(e1).have.property('inc').which.is.Function()
       should(e1).have.property('$c').which.is.Array()
       //console.log(e1)
     });
@@ -117,11 +118,11 @@ describe('#Class', function() {
       d1 = (new d()).apply(a)
       d2 = (new d()).apply(a)
 
-      should(a1.$c[0]).be.exactly(9)
+      should(a1.$c[0]).equal(9)
 
       d1.$c[0] ++
 
-      should(a1.$c[0]).be.exactly(10)
+      should(a1.$c[0]).equal(10)
 
       should(a1.$c).be.eql(d1.$c)
       should(a1.$c).be.eql(d2.$c)
@@ -147,6 +148,41 @@ describe('#Class', function() {
 
       should(outG).be.eql('G')
       should(outF).be.eql('F!')
+    });
+    it('should execute overwrite correctly', function() {
+      function batata() {}
+      function batatu() { this.super() }
+
+      H = {
+        init:function() {
+          this.test = this.overwrite('batata', batata);
+        }
+      }
+      I = {
+        init:function() {
+          this.overwrite('test', batatu)
+          this.overwrite('batata', batata)
+        }
+      }
+    
+      h = Class.extend(H)
+      i = h.extend(I)
+
+      // Building instances
+      h1 = new h
+      i1 = new i
+    
+      h1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : undefined })
+      h1.should.have.property('test').which.is.Function()
+      h1.should.have.property('batata').which.is.Function()
+      should(h1.test).equal(h1.batata)
+      should(h1.batata).equal(batata)
+
+      i1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : undefined })
+      i1.should.have.property('test').which.is.Function()
+      i1.should.have.property('batata').which.is.Function()
+      should(i1.test).not.equal(batatu)
+      should(i1.batata).equal(batata)
     });
   });
 });
