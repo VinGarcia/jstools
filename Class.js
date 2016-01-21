@@ -99,10 +99,12 @@
       var bkp = _super
       this['super'] = _super
       
-      var ret = func.apply(this, arguments)
-
-      this['super'] = bkp
-
+      try {
+        var ret = func.apply(this, arguments)
+      } finally {
+        this['super'] = bkp
+      }
+ 
       return ret;
     }
   }
@@ -146,9 +148,11 @@
       var bkp = this.super
       this.super = Super
 
-      prop.init.apply(this, arguments);
-
-      this.super = bkp
+      try {
+        prop.init.apply(this, arguments);
+      } finally {
+        this.super = bkp
+      }
 
       /* * * * * Wrap any priviledged functions with `super` * * * * */
       for(var name in _superFuncs) {
