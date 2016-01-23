@@ -5,7 +5,7 @@
  */
 // Inspired by base2 and Prototype
 (function(){
-  var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\bsuper\b/ : /.*/;
+  var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\bthis\s*\.\s*super\b/ : /.*/;
 
   // Require deep copy method:
   var copy = require('./copy.js').copy
@@ -111,6 +111,9 @@
   }
 
   function wrapInit(Class, _super, prop, id) {
+
+    var check = checkSuper(prop.init)
+
     return function() {
 
       // If already initialized:
@@ -134,7 +137,7 @@
 
       // Call default super if not called by the user,
       // or if the user did not define an init function.
-      if(!fnTest.test(prop.init) || !prop.init)
+      if(!check || !prop.init)
         Super.apply(this)
 
       // If the user defined no init, the job is done.
@@ -238,6 +241,58 @@
       }
     }
   }
+
+  // Only used inside wrapInit because it is very important
+  // to detect if this.super is really being called in there
+  if(this.__DEBUG__) CheckSuper = checkSuper
+  function checkSuper(func) {
+
+    var funcDec = /\bfunction(?:\s*\w*)?\s*\((?:\s*\w*\s*,?)*\)\s*{/g
+
+    var bracket = /\{|\}/g
+
+    var supTest = /\bthis\s*\.\s*super\b/g
+
+    funcDec.lastIndex=1
+    var fn = funcDec.exec(func)
+    var sup = supTest.exec(func)
+
+    if(!fn) return sup ? true : false
+
+    if(!sup) return false
+    
+    // If there is a super call between here and the next function:
+    if(sup.index < fn.index) return true
+
+    bracket.lastIndex = funcDec.lastIndex
+
+    var nO = 1, nC = 0
+    while(true) {
+      while(nO > nC) {
+        var ret = bracket.exec(func)
+        if(ret[0] == '}') nC++;
+        if(ret[0] == '{') nO++;
+      }
+
+      supTest.lastIndex = bracket.lastIndex
+      sup = supTest.exec(func)
+      funcDec.lastIndex = bracket.lastIndex
+      fn = funcDec.exec(func)
+
+      if(!fn) return sup ? true : false;
+
+      if(!sup) return false;
+
+      if(sup.index < fn.index) return true
+
+      nO++
+      bracket.lastIndex = funcDec.lastIndex
+    }
+  }
 })();
+
+
+
+
 
 

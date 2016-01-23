@@ -1,4 +1,5 @@
 
+__DEBUG__ = true
 require('../Class.js')
 should = require('should/as-function')
 require('should')
@@ -183,6 +184,42 @@ describe('#Class', function() {
       i1.should.have.property('batata').which.is.Function()
       should(i1.test).not.equal(batatu)
       should(i1.batata).equal(batata)
+    });
+  });
+  describe('In any case', function(){
+    it('should detect a super call correctly', function(){
+      var check = CheckSuper
+
+      check(function(){}).should.equal(false)
+      check(function(){this.super()}).should.equal(true)
+      check(function(){this.super(); function btt(){}}).should.equal(true)
+      check(function(){ function btt(){this.super()} }).should.equal(false)
+      check(function(){ function btt(){this.super()} this.super() }).should.equal(true)
+      check(function(){ function btt(){this.super()} this.super(); function btt2(){ this.super() } }).should.equal(true)
+      check(function(){ function btt(){this.super()} function btt2(){ this.super() } }).should.equal(false)
+      check(function(){ function btt(){this.super()} function btt2(){ this.super() } this.super() }).should.equal(true)
+
+      check(fun1).should.equal(true)
+      check(fun2).should.equal(false)
+
+      function fun1(arg1, arg2, arg3) {
+        function btt(batata) {var batatinha = function() { console.log('loucura digital') }; return batata }
+        btt()();
+        function noname() {}
+        this.batata = function festaDaAlegria() {console.log('Loucura!'); this.super() }
+        var ret = this.super()
+        function panicats() { this.super().safadeza() }
+        potato = function(args) { this.super(); return 10 }
+      }
+
+      function fun2(arg1, arg2, arg3) {
+        function btt(batata) {var batatinha = function() { console.log('loucura digital') }; return batata }
+        btt()();
+        function noname() {}
+        this.batata = function festaDaAlegria() {console.log('Loucura!'); this.super() }
+        function panicats() { this.super().safadeza() }
+        potato = function(args) { this.super(); return 10 }
+      }
     });
   });
 });
