@@ -9,7 +9,7 @@ function copy(obj, manCopy) {
   if(manCopy && typeof manCopy != 'function')
     throw "The manual copy argument must be undefined or a function!"
 
-  if(typeof obj !== 'object' && typeof obj !== 'function' || obj == null)
+  if(typeof obj != 'object' && typeof obj != 'function' || obj == null)
     return obj;
   
   if(obj.clone != undefined)
@@ -31,7 +31,7 @@ function copy(obj, manCopy) {
   // Copy the object with a deep copy:
   for(var name in obj) {
     if(obj.hasOwnProperty(name)) {
-      if(typeof obj[name] !== 'object')
+      if(typeof obj[name] != 'object')
         newObj[name] = manCopy ? manCopy(name, obj[name]) : obj[name];
       else
         newObj[name] = manCopy ? manCopy(name, obj[name]) : copy(obj[name]);
@@ -63,24 +63,24 @@ function instanceOf(obj, parent) {
     obj = this
   }
 
-  if(typeof parent !== 'function' && typeof parent !== 'object')
+  if(typeof parent != 'function' && typeof parent != 'object')
     return false
 
   var this_proto;
-  if(typeof obj === 'object')
+  if(typeof obj == 'object')
     this_proto = Object.getPrototypeOf(obj)
-  else if(typeof obj === 'function')
+  else if(typeof obj == 'function')
     this_proto = obj.prototype
 
   var proto;
-  if(typeof parent === 'object') {
+  if(typeof parent == 'object') {
     if(parent.__original__ != null &&
         typeof parent.__original__ == 'object')
       proto = parent.__original__
     else
       proto = parent
   }
-  else if(typeof parent === 'function')
+  else if(typeof parent == 'function')
     proto = parent.prototype
 
   while(true) {

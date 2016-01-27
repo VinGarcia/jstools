@@ -131,7 +131,7 @@
         // Don't add functions and $hared variables:
         if( typeof prop[name] != 'function' && name[0] != '$')
           // If name is not defined:
-          if(!this[name])
+          if(!(name in this))
             this[name] = copy(prop[name])
       }
 
