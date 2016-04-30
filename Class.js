@@ -16,6 +16,7 @@
   // The base Class implementation (does nothing)
   this.Class = function(){
     hide(this, 'apply', apply)
+    hide(this, 'overwrite', overwrite)
     hide(this, 'instanceof', instanceOf)
   }
   this.Class.prototype.init = function(){}
@@ -23,6 +24,11 @@
   function apply(func, args) {
     func.apply(this, [].splice.call(arguments, 1));
     return this;
+  }
+
+  function overwrite(name, func) {
+    this[name] = wrapSuper(this[name], func)
+    return this[name]
   }
 
   // Create a new Class that inherits from this class
@@ -151,11 +157,11 @@
       /* * * * * Wrap it with this.super * * * * */
       var bkp = this.super
       this.super = Super
+
+      // Make sure overwrite is where it should be,
+      // even if the user has erased it:
       var bkp2 = this.overwrite
-      this.overwrite = function(name, func) {
-        this[name] = wrapSuper(this[name], func)
-        return this[name]
-      }
+      this.overwrite = overwrite
 
       try {
         prop.init.apply(this, arguments);

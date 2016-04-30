@@ -151,6 +151,9 @@ describe('#Class', function() {
       should(outF).be.eql('F!')
     });
     it('should execute overwrite correctly', function() {
+      var _overwrite;
+      var erased = function(){}
+
       function batata() {}
       function batatu() { this.super() }
 
@@ -160,7 +163,9 @@ describe('#Class', function() {
         }
       }
       I = {
+        overwrite : erased,
         init:function() {
+          _overwrite = this.overwrite;
           this.overwrite('test', batatu)
           this.overwrite('batata', batata)
         }
@@ -173,13 +178,13 @@ describe('#Class', function() {
       h1 = new h
       i1 = new i
     
-      h1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : undefined })
+      h1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : _overwrite })
       h1.should.have.property('test').which.is.Function()
       h1.should.have.property('batata').which.is.Function()
       should(h1.test).equal(h1.batata)
       should(h1.batata).equal(batata)
 
-      i1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : undefined })
+      i1.should.have.propertyWithDescriptor('overwrite', { enumerable : false, writable : true, value : erased })
       i1.should.have.property('test').which.is.Function()
       i1.should.have.property('batata').which.is.Function()
       should(i1.test).not.equal(batatu)
