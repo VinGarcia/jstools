@@ -226,5 +226,19 @@ describe('#Class', function() {
         potato = function(args) { this.super(); return 10 }
       }
     });
+    it('should not depend on `this.instanceof` to be preserved', function() {
+      var called = false;
+      var erased = function(){ called = true }
+      J = {
+        instanceof : erased
+      }
+
+      j = Class.extend(J)
+
+      // Building instances
+      j1 = new j
+
+      should(called).equal(false)
+    });
   });
 });

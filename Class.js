@@ -227,7 +227,7 @@
          * instead use: `(new Class()).instanceof(Class)`
          */
         var proto = Class.prototype
-        if(!this.instanceof(Class)) {
+        if(!instanceOf.call(this, Class)) {
           // Shallow copy to allow the correct behavior of $shared variables.
           var proto = copy(proto, function(name, obj) { return obj })
           var this_proto = Object.getPrototypeOf(this)
